@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarp'ın Gizli Görevleri</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #e0f7fa;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #00838f; font-size: 2.5em; text-shadow: 2px 2px #b2ebf2; }
+        
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .day-card {
+            width: 90px;
+            height: 110px;
+            background: #ffe082;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #d35400;
+            border: 4px dashed #ffca28;
+            position: relative;
+            box-shadow: 0 6px 0 #ffb300;
+            transition: transform 0.1s;
+        }
+        
+        .day-card:active {
+            transform: translateY(6px);
+            box-shadow: none;
+        }
+        
+        .badge {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            font-size: 35px;
+            display: none;
+        }
+        
+        /* Tamamlanmış Gün Stili */
+        .completed {
+            background: #a5d6a7;
+            border-color: #81c784;
+            color: #2e7d32;
+            box-shadow: 0 6px 0 #66bb6a;
+        }
+        .completed .badge { display: block; }
+        
+        /* Zarf (Modal) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .envelope {
+            background: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border-top: 60px solid #ef5350; /* Zarf kapağı görünümü */
+            position: relative;
+            text-align: left;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .envelope-title { margin-top: -10px; color: #c62828; text-align: center; font-size: 24px;}
+        
+        .task {
+            display: flex;
+            align-items: center;
+            background: #f5f5f5;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            color: #333;
+            border-left: 5px solid #29b6f6;
+        }
+        
+        .task.donus { border-left-color: #ab47bc; }
+        
+        .task input[type="checkbox"] {
+            transform: scale(1.8);
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #4CAF50;
+        }
+        
+        .close-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #29b6f6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 0 #0288d1;
+        }
+        .close-btn:active { transform: translateY(4px); box-shadow: none; }
+
+    </style>
+</head>
+<body>
+
+    <h1>🕵️‍♂️ Merkez Üs: Görev Paneli</h1>
+    <div class="grid" id="grid"></div>
+
+    <!-- Zarf Ekranı -->
+    <div class="modal-overlay" id="modal">
+        <div class="envelope">
+            <h2 class="envelope-title" id="modal-title">Görev</h2>
+            
+            <div class="task">
+                <input type="checkbox" id="check-gidis" onchange="updateProgress()">
+                <label for="check-gidis" id="text-gidis">Gidiş Görevi</label>
+            </div>
+            
+            <div class="task donus">
+                <input type="checkbox" id="check-donus" onchange="updateProgress()">
+                <label for="check-donus" id="text-donus">Dönüş Görevi</label>
+            </div>
+            
+            <button class="close-btn" onclick="closeModal()">Görevi Kaydet & Kapat</button>
+        </div>
+    </div>
+
+    <script>
+        // Görev Veritabanı
+        const gorevler = [
+            {
+                gun: 1,
+                baslik: "Kâşif Görevi",
+                gidis: "Evden çıkmadan önce yaban mersini fidanına 'günaydın' de. Yolda 2 tane uçan kuş bul. 🐦",
+                donus: "Eve dönerken en sevdiğin orman hayvanı gibi yürü ve sesini çıkar! 🐻"
+            },
+            {
+                gun: 2,
+                baslik: "Müzik Ajanı",
+                gidis: "Yolda Wellerman (Nathan Evans) çalarken korsanlar gibi mırıldan! 🏴‍☠️",
+                donus: "Okulda olan komik bir şeyi eve dönünce ikizlere kendi uydurduğun gizli bir dille anlat. 👶👶"
+            },
+            {
+                gun: 3,
+                baslik: "Hızlı Görev",
+                gidis: "Önündeki 10 adımı yavaş çekimde, sonraki 10 adımı Ceza gibi çok hızlı at! ⚡",
+                donus: "Üsse dönünce köpeğimizle selamlaş ve ona okulda öğrendiğin yeni bir kelimeyi fısılda. 🐶"
+            }
+        ];
+
+        // Kalan 12 günü otomatik boş şablon olarak ekleyelim
+        for(let i = 4; i <= 15; i++) {
+            gorevler.push({
+                gun: i,
+                baslik: `Gizli Görev ${i}`,
+                gidis: "Merkezden yeni gidiş görevi bekleniyor...",
+                donus: "Merkezden yeni dönüş görevi bekleniyor..."
+            });
+        }
+
+        let currentDay = null;
+        // Tarayıcı hafızasından Sarp'ın ilerlemesini çek (Yoksa boş obje oluştur)
+        let sarpProgress = JSON.parse(localStorage.getItem('sarpProgress')) || {};
+
+        const grid = document.getElementById('grid');
+
+        // Ana ekranı oluştur
+        function renderGrid() {
+            grid.innerHTML = '';
+            gorevler.forEach(gorev => {
+                const isCompleted = sarpProgress[gorev.gun]?.gidis && sarpProgress[gorev.gun]?.donus;
+                
+                const card = document.createElement('div');
+                card.className = `day-card ${isCompleted ? 'completed' : ''}`;
+                card.onclick = () => openModal(gorev.gun);
+                
+                card.innerHTML = `
+                    Gün ${gorev.gun}
+                    <div class="badge">🎖️</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openModal(gun) {
+            currentDay = gun;
+            const gorev = gorevler.find(g => g.gun === gun);
+            
+            document.getElementById('modal-title').innerText = `${gun}. Gün: ${gorev.baslik}`;
+            document.getElementById('text-gidis').innerText = gorev.gidis;
+            document.getElementById('text-donus').innerText = gorev.donus;
+            
+            // Önceden işaretlenmişse kutucukları dolu getir
+            document.getElementById('check-gidis').checked = sarpProgress[gun]?.gidis || false;
+            document.getElementById('check-donus').checked = sarpProgress[gun]?.donus || false;
+            
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function updateProgress() {
+            if(!sarpProgress[currentDay]) sarpProgress[currentDay] = {};
+            
+            sarpProgress[currentDay].gidis = document.getElementById('check-gidis').checked;
+            sarpProgress[currentDay].donus = document.getElementById('check-donus').checked;
+            
+            // Tarayıcı hafızasına kaydet
+            localStorage.setItem('sarpProgress', JSON.stringify(sarpProgress));
+            
+            renderGrid();
+        }
+
+        // Uygulama başladığında ekranı çiz
+        renderGrid();
+    </script>
+</body>
+</html>
